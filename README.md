@@ -4,6 +4,8 @@ Embeddable SVG card showing your merged PRs across repos you don't own. The open
 
 [![Example](https://oss-card.vercel.app/api?username=jashshah999&theme=dark)](https://github.com/jashshah999/oss-card)
 
+**[Live Preview & Generator](https://oss-card.vercel.app/preview)**
+
 ## Usage
 
 Add to your GitHub profile README:
@@ -12,39 +14,91 @@ Add to your GitHub profile README:
 ![OSS Contributions](https://oss-card.vercel.app/api?username=YOUR_USERNAME)
 ```
 
-## Options
+## Parameters
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
 | `username` | (required) | GitHub username |
-| `theme` | `dark` | `dark`, `light`, or `dracula` |
-| `max_repos` | `6` | Number of repos to show |
+| `theme` | `dark` | `dark`, `light`, `dracula`, `nord`, `tokyonight`, `catppuccin`, `gruvbox`, `onedark`, `synthwave`, `cyberpunk` |
+| `layout` | `default` | `default` (bars), `compact` (pill badges), `minimal` (big number), `detailed` (with PR titles) |
+| `max_repos` | `6` | Number of repos to show (1-20) |
 | `title` | auto | Custom card title |
+| `width` | `480` | Card width in px (400-800) |
+| `border_radius` | `12` | Border radius (0-20) |
+| `animation` | `none` | `none`, `fade`, `slide` (CSS animations in SVG) |
+| `font` | `default` | `default`, `mono`, `sans` |
+| `bg_color` | — | Custom background hex (no `#`, e.g. `0a0e17`) |
+| `border_color` | — | Custom border hex |
+| `title_color` | — | Custom title hex |
+| `text_color` | — | Custom text hex |
+| `accent_color` | — | Custom accent/bar hex |
+| `hide_title` | `false` | Hide the title |
+| `hide_border` | `false` | Hide the border |
+| `show_icons` | `false` | Show language dots next to repos |
+| `username_display` | `false` | Show @username under title |
+| `show_stats` | `false` | Show extra stats (last contribution date) |
+| `locale` | `en` | Locale (for future i18n) |
+
+## Themes
+
+| Theme | Preview |
+|-------|---------|
+| dark | ![](https://oss-card.vercel.app/api?username=jashshah999&theme=dark&max_repos=3) |
+| light | ![](https://oss-card.vercel.app/api?username=jashshah999&theme=light&max_repos=3) |
+| dracula | ![](https://oss-card.vercel.app/api?username=jashshah999&theme=dracula&max_repos=3) |
+| nord | ![](https://oss-card.vercel.app/api?username=jashshah999&theme=nord&max_repos=3) |
+| tokyonight | ![](https://oss-card.vercel.app/api?username=jashshah999&theme=tokyonight&max_repos=3) |
+| catppuccin | ![](https://oss-card.vercel.app/api?username=jashshah999&theme=catppuccin&max_repos=3) |
+| gruvbox | ![](https://oss-card.vercel.app/api?username=jashshah999&theme=gruvbox&max_repos=3) |
+| onedark | ![](https://oss-card.vercel.app/api?username=jashshah999&theme=onedark&max_repos=3) |
+| synthwave | ![](https://oss-card.vercel.app/api?username=jashshah999&theme=synthwave&max_repos=3) |
+| cyberpunk | ![](https://oss-card.vercel.app/api?username=jashshah999&theme=cyberpunk&max_repos=3) |
+
+## Layouts
+
+### Default (bar chart)
+```
+![OSS](https://oss-card.vercel.app/api?username=jashshah999&layout=default)
+```
+
+### Compact (pill badges)
+```
+![OSS](https://oss-card.vercel.app/api?username=jashshah999&layout=compact)
+```
+
+### Minimal (just the number)
+```
+![OSS](https://oss-card.vercel.app/api?username=jashshah999&layout=minimal)
+```
+
+### Detailed (with last PR title per repo)
+```
+![OSS](https://oss-card.vercel.app/api?username=jashshah999&layout=detailed)
+```
 
 ## Examples
 
 ```markdown
-<!-- Dark theme (default) -->
-![OSS](https://oss-card.vercel.app/api?username=jashshah999)
+<!-- Cyberpunk theme, compact layout -->
+![OSS](https://oss-card.vercel.app/api?username=jashshah999&theme=cyberpunk&layout=compact)
 
-<!-- Light theme -->
-![OSS](https://oss-card.vercel.app/api?username=jashshah999&theme=light)
+<!-- Custom colors -->
+![OSS](https://oss-card.vercel.app/api?username=jashshah999&bg_color=000000&accent_color=ff6600&text_color=ffffff)
 
-<!-- Custom title + fewer repos -->
-![OSS](https://oss-card.vercel.app/api?username=jashshah999&theme=dracula&max_repos=4&title=My%20Contributions)
+<!-- Minimal with slide animation -->
+![OSS](https://oss-card.vercel.app/api?username=jashshah999&layout=minimal&animation=slide&theme=nord)
+
+<!-- Detailed, no border, mono font -->
+![OSS](https://oss-card.vercel.app/api?username=jashshah999&layout=detailed&hide_border=true&font=mono&theme=gruvbox)
 ```
 
-## Why?
+## Error Handling
 
-GitHub profiles show your own repos but completely hide your contributions to other people's projects. A developer with 50 PRs merged into PyTorch, Linux, or React has no way to surface that on their profile.
+- **0 PRs**: Renders a "No contributions found" card
+- **Rate limited**: Renders a "Rate limited" card with retry instructions
+- **Timeout**: Renders a "Request timed out" card
 
-This fixes that.
-
-## What it shows
-
-- Total merged PRs (excluding your own repos)
-- Number of distinct repos contributed to
-- Top repos by PR count with badge counts
+All error states return valid SVG so your README never shows a broken image.
 
 ## Self-hosting
 
@@ -57,16 +111,16 @@ Set `GITHUB_TOKEN` as an environment variable (a token with no scopes works — 
 ## How it works
 
 1. Queries GitHub Search API: `author:{username} type:pr is:merged -user:{username}`
-2. Aggregates results by repo
-3. Renders an SVG card
-4. Caches for 1 hour
+2. Aggregates results by repo, extracts PR titles and dates
+3. Renders a themed SVG card in the requested layout
+4. Caches for 5 minutes (card endpoint) / 1 hour (Vercel edge)
 
 ## Rate limits
 
 Without a token: 10 requests/minute (shared across all unauthenticated users).
 With a `GITHUB_TOKEN`: 30 requests/minute.
 
-The 1-hour cache means each unique username is only fetched once per hour regardless of how many times the SVG is loaded.
+The cache means each unique parameter combination is only fetched once per cache period.
 
 ## License
 
