@@ -26,7 +26,7 @@ module.exports = async function handler(req, res) {
     });
 
     res.setHeader("Content-Type", "image/svg+xml");
-    res.setHeader("Cache-Control", "public, max-age=3600, s-maxage=3600");
+    res.setHeader("Cache-Control", "public, max-age=300, s-maxage=300");
     res.status(200).send(svg);
   } catch (err) {
     res.status(500).send(`Error: ${err.message}`);
