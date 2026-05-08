@@ -1,0 +1,15 @@
+{
+  "name": "oss-card",
+  "version": "1.0.0",
+  "description": "Embeddable SVG card showing your merged PRs across repos you don't own",
+  "scripts": {
+    "dev": "vercel dev",
+    "build": "vercel build"
+  },
+  "dependencies": {
+    "node-fetch": "^3.3.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
