@@ -3,8 +3,7 @@
   "version": "1.0.0",
   "description": "Embeddable SVG card showing your merged PRs across repos you don't own",
   "scripts": {
-    "dev": "vercel dev",
-    "build": "vercel build"
+    "dev": "vercel dev"
   },
   "dependencies": {},
   "engines": {
