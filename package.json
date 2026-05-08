@@ -6,9 +6,7 @@
     "dev": "vercel dev",
     "build": "vercel build"
   },
-  "dependencies": {
-    "node-fetch": "^3.3.0"
-  },
+  "dependencies": {},
   "engines": {
     "node": ">=18"
   }
