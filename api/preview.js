@@ -42,6 +42,7 @@ module.exports = function handler(req, res) {
     }
     .field input:focus, .field select:focus { border-color: #22d3ee; }
     .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .field-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
     .checkbox-row { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 14px; }
     .checkbox-row label { font-size: 0.85rem; color: #94a3b8; display: flex; align-items: center; gap: 6px; cursor: pointer; }
     .checkbox-row input[type="checkbox"] { accent-color: #22d3ee; }
@@ -93,6 +94,7 @@ module.exports = function handler(req, res) {
       color: #22d3ee;
     }
     .btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
+    .section-divider { border-top: 1px solid #1e3a5f; margin: 16px 0; }
     .theme-gallery { margin-top: 40px; }
     .theme-gallery h2 { font-size: 1.2rem; margin-bottom: 20px; color: #7dd3fc; }
     .theme-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
@@ -113,7 +115,7 @@ module.exports = function handler(req, res) {
 <body>
   <div class="container">
     <h1>oss<span>-</span>card</h1>
-    <p class="subtitle">Generate an embeddable SVG card showing your open source contributions.</p>
+    <p class="subtitle">Generate an embeddable SVG card showing your open source contributions. Now with ranks, trophies, streaks, and more.</p>
 
     <div class="grid">
       <div class="panel">
@@ -145,10 +147,11 @@ module.exports = function handler(req, res) {
               <option value="compact">Compact (pills)</option>
               <option value="minimal">Minimal (number)</option>
               <option value="detailed">Detailed (with PR titles)</option>
+              <option value="graph">Graph (heatmap)</option>
             </select>
           </div>
         </div>
-        <div class="field-row">
+        <div class="field-row-3">
           <div class="field">
             <label>Max Repos</label>
             <input type="number" id="max_repos" min="1" max="20" value="6">
@@ -157,8 +160,17 @@ module.exports = function handler(req, res) {
             <label>Width</label>
             <input type="number" id="width" min="400" max="800" value="480">
           </div>
+          <div class="field">
+            <label>Time Range</label>
+            <select id="time_range">
+              <option value="all">All time</option>
+              <option value="year">Last year</option>
+              <option value="6months">Last 6 months</option>
+              <option value="3months">Last 3 months</option>
+            </select>
+          </div>
         </div>
-        <div class="field-row">
+        <div class="field-row-3">
           <div class="field">
             <label>Animation</label>
             <select id="animation">
@@ -175,6 +187,16 @@ module.exports = function handler(req, res) {
               <option value="sans">Sans</option>
             </select>
           </div>
+          <div class="field">
+            <label>Header</label>
+            <select id="header">
+              <option value="none">None (accent line)</option>
+              <option value="wave">Wave</option>
+              <option value="geometric">Geometric</option>
+              <option value="dots">Dots</option>
+              <option value="circuit">Circuit</option>
+            </select>
+          </div>
         </div>
         <div class="field-row">
           <div class="field">
@@ -182,12 +204,37 @@ module.exports = function handler(req, res) {
             <input type="number" id="border_radius" min="0" max="20" value="12">
           </div>
           <div class="field">
+            <label>Sort</label>
+            <select id="sort">
+              <option value="count">By PR count</option>
+              <option value="recent">Most recent</option>
+              <option value="stars">By stars</option>
+            </select>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
             <label>Title (optional)</label>
             <input type="text" id="title" placeholder="Custom title...">
           </div>
+          <div class="field">
+            <label>Footer Text</label>
+            <input type="text" id="footer_text" placeholder="oss-card">
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Exclude Repos (comma-sep)</label>
+            <input type="text" id="exclude_repos" placeholder="owner/repo, owner/repo2">
+          </div>
+          <div class="field">
+            <label>Include Orgs Only</label>
+            <input type="text" id="include_orgs" placeholder="pytorch, huggingface">
+          </div>
         </div>
 
-        <h2 style="margin-top: 20px;">Custom Colors (hex, no #)</h2>
+        <div class="section-divider"></div>
+        <h2>Custom Colors (hex, no #)</h2>
         <div class="field-row">
           <div class="field">
             <label>Background</label>
@@ -213,16 +260,27 @@ module.exports = function handler(req, res) {
           <input type="text" id="accent_color" placeholder="22d3ee" style="max-width: 50%;">
         </div>
 
-        <div class="checkbox-row" style="margin-top: 16px;">
+        <div class="section-divider"></div>
+        <h2>Features</h2>
+        <div class="checkbox-row">
           <label><input type="checkbox" id="hide_title"> Hide title</label>
           <label><input type="checkbox" id="hide_border"> Hide border</label>
           <label><input type="checkbox" id="show_icons"> Show icons</label>
           <label><input type="checkbox" id="username_display"> Show username</label>
           <label><input type="checkbox" id="show_stats"> Extra stats</label>
         </div>
+        <div class="checkbox-row">
+          <label><input type="checkbox" id="show_avatar"> Avatar</label>
+          <label><input type="checkbox" id="show_streak"> Streak</label>
+          <label><input type="checkbox" id="show_categories"> Categories</label>
+          <label><input type="checkbox" id="show_notable"> Notable orgs</label>
+          <label><input type="checkbox" id="show_trophies"> Trophies</label>
+          <label><input type="checkbox" id="rank"> Rank badge</label>
+        </div>
 
         <div class="btn-row">
           <button class="btn" onclick="generate()">Generate</button>
+          <button class="btn btn-outline" onclick="window.open(buildUrl().replace('/api?', '/api/json?'), '_blank')">View JSON</button>
         </div>
       </div>
 
@@ -243,6 +301,12 @@ module.exports = function handler(req, res) {
           <span class="copy-hint">click to copy</span>
           <span id="md-text">![OSS Contributions](https://oss-card.vercel.app/api?username=...)</span>
         </div>
+
+        <h2>JSON API</h2>
+        <div class="url-box" id="json-box" onclick="copyJson()">
+          <span class="copy-hint">click to copy</span>
+          <span id="json-text">https://oss-card.vercel.app/api/json?username=...</span>
+        </div>
       </div>
     </div>
 
@@ -262,18 +326,24 @@ module.exports = function handler(req, res) {
       params.set('username', username);
 
       const fields = ['theme','layout','max_repos','width','animation','font','border_radius','title',
-                      'bg_color','border_color','title_color','text_color','accent_color'];
+                      'bg_color','border_color','title_color','text_color','accent_color',
+                      'header','footer_text','exclude_repos','include_orgs','time_range','sort'];
       const defaults = { theme:'dark', layout:'default', max_repos:'6', width:'480', animation:'none',
-                         font:'default', border_radius:'12', title:'' };
+                         font:'default', border_radius:'12', title:'', header:'none', footer_text:'',
+                         exclude_repos:'', include_orgs:'', time_range:'all', sort:'count' };
 
       for (const f of fields) {
-        const val = document.getElementById(f).value.trim();
+        const el = document.getElementById(f);
+        if (!el) continue;
+        const val = el.value.trim();
         if (val && val !== (defaults[f] || '')) params.set(f, val);
       }
 
-      const checkboxes = ['hide_title','hide_border','show_icons','username_display','show_stats'];
+      const checkboxes = ['hide_title','hide_border','show_icons','username_display','show_stats',
+                          'show_avatar','show_streak','show_categories','show_notable','show_trophies','rank'];
       for (const c of checkboxes) {
-        if (document.getElementById(c).checked) params.set(c, 'true');
+        const el = document.getElementById(c);
+        if (el && el.checked) params.set(c, 'true');
       }
 
       return BASE + '?' + params.toString();
@@ -284,6 +354,7 @@ module.exports = function handler(req, res) {
       document.getElementById('preview').innerHTML = '<img src="' + url + '" alt="oss-card preview">';
       document.getElementById('url-text').textContent = url;
       document.getElementById('md-text').textContent = '![OSS Contributions](' + url + ')';
+      document.getElementById('json-text').textContent = url.replace('/api?', '/api/json?');
     }
 
     function copyUrl() {
@@ -293,6 +364,10 @@ module.exports = function handler(req, res) {
     function copyMd() {
       navigator.clipboard.writeText(document.getElementById('md-text').textContent);
       flash('md-box');
+    }
+    function copyJson() {
+      navigator.clipboard.writeText(document.getElementById('json-text').textContent);
+      flash('json-box');
     }
     function flash(id) {
       const el = document.getElementById(id);

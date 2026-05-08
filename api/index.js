@@ -1,4 +1,4 @@
-const { fetchMergedPRs, aggregatePRs } = require("../src/fetch");
+const { fetchMergedPRs, fetchUserProfile, aggregatePRs, enrichWithStars } = require("../src/fetch");
 const { renderCard, renderErrorCard } = require("../src/card");
 
 module.exports = async function handler(req, res) {
@@ -23,6 +23,19 @@ module.exports = async function handler(req, res) {
     username_display,
     show_stats,
     locale,
+    // New params
+    show_avatar,
+    show_streak,
+    show_categories,
+    show_notable,
+    show_trophies,
+    rank,
+    header,
+    footer_text,
+    exclude_repos,
+    include_orgs,
+    time_range,
+    sort,
   } = req.query;
 
   if (!username) {
@@ -32,8 +45,21 @@ module.exports = async function handler(req, res) {
 
   try {
     const token = process.env.GITHUB_TOKEN;
-    const searchResults = await fetchMergedPRs(username, token);
-    const stats = aggregatePRs(searchResults);
+
+    // Fetch PRs with time range filter
+    const searchResults = await fetchMergedPRs(username, token, {
+      timeRange: ["year", "6months", "3months", "all"].includes(time_range) ? time_range : "all",
+    });
+
+    // Aggregate with filters
+    const excludeRepos = exclude_repos ? exclude_repos.split(",").map((s) => s.trim()) : [];
+    const includeOrgsList = include_orgs ? include_orgs.split(",").map((s) => s.trim()) : [];
+
+    let stats = aggregatePRs(searchResults, {
+      excludeRepos,
+      includeOrgs: includeOrgsList,
+      sort: ["count", "recent", "stars"].includes(sort) ? sort : "count",
+    });
 
     if (stats.totalPRs === 0) {
       const svg = renderErrorCard(
@@ -44,6 +70,23 @@ module.exports = async function handler(req, res) {
       res.setHeader("Cache-Control", "public, max-age=300, s-maxage=300");
       res.status(200).send(svg);
       return;
+    }
+
+    // Fetch extra data if needed
+    let avatarUrl = null;
+    const needsProfile = show_avatar === "true";
+    const needsStars = show_notable === "true" || show_trophies === "true" || sort === "stars";
+
+    if (needsProfile) {
+      const profile = await fetchUserProfile(username, token);
+      if (profile) avatarUrl = profile.avatarUrl;
+    }
+
+    if (needsStars) {
+      stats = await enrichWithStars(stats, token);
+      if (sort === "stars") {
+        stats.repos.sort((a, b) => (b.stars || 0) - (a.stars || 0));
+      }
     }
 
     const parsedWidth = parseInt(width);
@@ -69,6 +112,16 @@ module.exports = async function handler(req, res) {
       usernameDisplay: username_display === "true",
       showStats: show_stats === "true",
       locale: locale || "en",
+      // New options
+      showAvatar: show_avatar === "true",
+      avatarUrl,
+      showStreak: show_streak === "true",
+      showCategories: show_categories === "true",
+      showNotable: show_notable === "true",
+      showTrophies: show_trophies === "true",
+      rank: rank === "true",
+      header: ["wave", "geometric", "dots", "circuit", "none"].includes(header) ? header : "none",
+      footerText: footer_text || "oss-card",
     });
 
     res.setHeader("Content-Type", "image/svg+xml");
